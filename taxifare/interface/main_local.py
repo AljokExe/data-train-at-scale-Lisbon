@@ -81,10 +81,15 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     df_train = df.iloc[:train_length, :].sample(frac=1) # Shuffle datasets to improve training
     df_val = df.iloc[train_length: train_length + val_length, :].sample(frac=1)
 
+    X_train = df_train.drop("fare_amount", axis=1)
+    y_train = df_train[["fare_amount"]]
+
+    X_val = df_val.drop("fare_amount", axis=1)
+    y_val = df_val[["fare_amount"]]
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
-    # YOUR CODE HERE
+
 
     # Train a model on the training set, using `model.py`
     model = None
