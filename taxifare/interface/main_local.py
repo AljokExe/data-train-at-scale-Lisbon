@@ -12,6 +12,18 @@ from taxifare.ml_logic.preprocessor import preprocess_features
 from taxifare.ml_logic.registry import save_model, save_results, load_model
 from taxifare.ml_logic.model import compile_model, initialize_model, train_model
 
+DTYPES_RAW = {
+    "key": "datetime64[ns, UTC]",
+    "fare_amount": "float32",
+    "pickup_datetime": "datetime64[ns, UTC]",
+    "pickup_longitude": "float32",
+    "pickup_latitude": "float32",
+    "dropoff_longitude": "float32",
+    "dropoff_latitude": "float32",
+    "passenger_count": "int16"
+}
+
+
 def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
     """
     - Query the raw dataset from Le Wagon's BigQuery dataset
@@ -47,19 +59,28 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     else:
         print("Loading data from Querying Big Query server...")
 
-        # YOUR CODE HERE
+        from google.cloud import bigquery
 
+        client = bigquery.Client(project=GCP_PROJECT)
+        query_job = client.query(query)
+        result = query_job.result()
+        df = result.to_dataframe(dtypes=DTYPES_RAW)
         # Save it locally to accelerate the next queries!
-        data.to_csv(data_query_cache_path, header=True, index=False)
+        df.to_csv(data_query_cache_path, header=True, index=False)
 
     # Clean data using data.py
-    # YOUR CODE HERE
+    df=clean_data(df)
 
     # Create (X_train, y_train, X_val, y_val) without data leaks
     # No need for test sets, we'll report val metrics only
     split_ratio = 0.02 # About one month of validation data
 
-    # YOUR CODE HERE
+    val_length = int((len(df)) * split_ratio)
+    train_length = len(df) - val_length
+
+    df_train = df.iloc[:train_length, :].sample(frac=1) # Shuffle datasets to improve training
+    df_val = df.iloc[train_length: train_length + val_length, :].sample(frac=1)
+
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
