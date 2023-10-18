@@ -102,7 +102,7 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     model = initialize_model(input_shape=X_train_processed.shape[1:])
     model = compile_model(model)
-    model = train_model(model, X_train_processed,y_train)
+    model,history = train_model(model, X_train_processed,y_train,validation_data=(X_val_processed,y_val))
 
 
 
