@@ -89,7 +89,10 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
-    X_train_preprocessed=preprocess_features(X_train)
+
+    X_train_processed = preprocess_features.transform(X_train)
+    X_val_processed = preprocess_features.transform(X_val)
+
 
     # Train a model on the training set, using `model.py`
     model = None
@@ -97,7 +100,11 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     batch_size = 256
     patience = 2
 
-    # YOUR CODE HERE
+    model = initialize_model(input_shape=X_train_processed.shape[1:])
+    model = compile_model(model)
+    model = train_model(model, X_train_processed,y_train)
+
+
 
     # Compute the validation metric (min val_mae) of the holdout set
     val_mae = np.min(history.history['val_mae'])
