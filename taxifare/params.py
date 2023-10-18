@@ -26,4 +26,3 @@ DTYPES_RAW = {
 }
 
 DTYPES_PROCESSED = np.float32
-
