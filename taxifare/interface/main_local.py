@@ -40,8 +40,9 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     if data_query_cached_exists:
         print("Loading data from local CSV...")
+        print("load local file...")
+        df = pd.read_csv(data_query_cache_path, parse_dates=['pickup_datetime'])
 
-        # YOUR CODE HERE
 
     else:
         print("Loading data from Querying Big Query server...")
