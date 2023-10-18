@@ -89,7 +89,7 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
-
+    X_train_preprocessed=preprocess_features(X_train)
 
     # Train a model on the training set, using `model.py`
     model = None
