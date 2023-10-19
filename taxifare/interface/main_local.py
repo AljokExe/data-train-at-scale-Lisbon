@@ -64,7 +64,7 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
         client = bigquery.Client(project=GCP_PROJECT)
         query_job = client.query(query)
         result = query_job.result()
-        df = result.to_dataframe(dtypes=DTYPES_RAW)
+        df = result.to_dataframe()
         # Save it locally to accelerate the next queries!
         df.to_csv(data_query_cache_path, header=True, index=False)
 
@@ -90,8 +90,8 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
 
-    X_train_processed = preprocess_features.transform(X_train)
-    X_val_processed = preprocess_features.transform(X_val)
+    X_train_processed = preprocess_features(X_train)
+    X_val_processed = preprocess_features(X_val)
 
 
     # Train a model on the training set, using `model.py`

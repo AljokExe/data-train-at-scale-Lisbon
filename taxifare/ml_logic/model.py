@@ -54,7 +54,7 @@ def train_model(
         X: np.ndarray,
         y: np.ndarray,
         batch_size=256,
-        patience=2,
+        patience=5,
         validation_data=None, # overrides validation_split
         validation_split=0.3
     ) -> Tuple[Model, dict]:
@@ -62,7 +62,7 @@ def train_model(
     Fit the model and return a tuple (fitted_model, history)
     """
     es = EarlyStopping(
-    monitor="val_loss",
+    monitor="val_mae",
     patience=patience,
     restore_best_weights=True,
     verbose=0
