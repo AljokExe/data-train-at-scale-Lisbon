@@ -79,7 +79,7 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     train_length = len(df) - val_length
 
     df_train = df.iloc[:train_length, :].sample(frac=1) # Shuffle datasets to improve training
-    df_val = df.iloc[train_length: train_length + val_length, :].sample(frac=1)
+    df_val = df.iloc[train_length: , :].sample(frac=1)
 
     X_train = df_train.drop("fare_amount", axis=1)
     y_train = df_train[["fare_amount"]]
