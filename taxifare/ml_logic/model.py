@@ -3,6 +3,7 @@ import time
 
 from colorama import Fore, Style
 from typing import Tuple
+from taxifare.utils import simple_time_and_memory_tracker
 
 # Timing the TF import
 print(Fore.BLUE + "\nLoading TensorFlow..." + Style.RESET_ALL)
@@ -16,7 +17,7 @@ end = time.perf_counter()
 print(f"\n✅ TensorFlow loaded ({round(end - start, 2)}s)")
 
 
-
+@simple_time_and_memory_tracker
 def initialize_model(input_shape: tuple) -> Model:
     """
     Initialize the Neural Network with random weights
@@ -37,7 +38,7 @@ def initialize_model(input_shape: tuple) -> Model:
 
     return model
 
-
+@simple_time_and_memory_tracker
 def compile_model(model: Model, learning_rate=0.0005) -> Model:
     """
     Compile the Neural Network
@@ -48,7 +49,7 @@ def compile_model(model: Model, learning_rate=0.0005) -> Model:
     print("✅ Model compiled")
 
     return model
-
+@simple_time_and_memory_tracker
 def train_model(
         model: Model,
         X: np.ndarray,

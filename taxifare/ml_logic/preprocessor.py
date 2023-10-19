@@ -8,8 +8,9 @@ from sklearn.compose import ColumnTransformer, make_column_transformer
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 
 from taxifare.ml_logic.encoders import transform_time_features, transform_lonlat_features, compute_geohash
+from taxifare.utils import simple_time_and_memory_tracker
 
-
+@simple_time_and_memory_tracker
 def preprocess_features(X: pd.DataFrame) -> np.ndarray:
     def create_sklearn_preprocessor() -> ColumnTransformer:
         """

@@ -5,6 +5,7 @@ from colorama import Fore, Style
 from pathlib import Path
 
 from taxifare.params import *
+from taxifare.utils import simple_time_and_memory_tracker
 
 def compress(df, **kwargs):
     """
@@ -35,6 +36,7 @@ def geo_irrel_transac(df):
 
     return df
 
+@simple_time_and_memory_tracker
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean raw data by
