@@ -71,8 +71,8 @@ def train_model(
     history = model.fit(
         X,
         y,
-        validation_data=validation_data,
-        epochs=100,
+        validation_split=validation_split,
+        epochs=100
         batch_size=batch_size,
         callbacks=[es],
         verbose=1
