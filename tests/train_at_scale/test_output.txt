@@ -1,115 +1,91 @@
-[1m============================= test session starts ==============================[0m
+============================= test session starts ==============================
 platform linux -- Python 3.10.6, pytest-7.4.2, pluggy-1.3.0 -- /home/aljoke/.pyenv/versions/3.10.6/envs/taxifare-env/bin/python3.10
 cachedir: .pytest_cache
 rootdir: /home/aljoke/code/lewagon/07-ML-Ops/01-Train-at-scale/data-train-at-scale/tests
 configfile: pytest_kitt.ini
-[1mcollecting ... [0mcollected 8 items
+collecting ... collected 8 items
 
-tests/train_at_scale/test_clean.py::test_clean_data [31mFAILED[0m[31m               [ 12%][0m
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train [31mFAILED[0m[31m [ 25%][0m
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_pred [31mFAILED[0m[31m [ 37%][0m
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess [31mFAILED[0m[31m [ 50%][0m
-tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train [31mFAILED[0m[31m [ 62%][0m
-tests/train_at_scale/test_model.py::test_model_can_fit [31mFAILED[0m[31m            [ 75%][0m
-tests/train_at_scale/test_notebook.py::TestNotebook::test_y_pred [32mPASSED[0m[31m  [ 87%][0m
-tests/train_at_scale/test_processor_pipeline.py::test_preprocess_features [31mFAILED[0m[31m [100%][0m
+tests/train_at_scale/test_clean.py::test_clean_data PASSED               [ 12%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train FAILED [ 25%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_pred PASSED [ 37%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess FAILED [ 50%]
+tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train FAILED [ 62%]
+tests/train_at_scale/test_model.py::test_model_can_fit PASSED            [ 75%]
+tests/train_at_scale/test_notebook.py::TestNotebook::test_y_pred PASSED  [ 87%]
+tests/train_at_scale/test_processor_pipeline.py::test_preprocess_features PASSED [100%]
 
 =================================== FAILURES ===================================
-[31m[1m_______________________________ test_clean_data ________________________________[0m
+________________ TestMainLocal.test_route_preprocess_and_train _________________
 
-fixture_query_1k =      fare_amount           pickup_datetime  ...  dropoff_latitude  passenger_count
-0            8.9 2009-01-15 09:22:3...           4
-454          8.5 2014-12-27 16:47:42+00:00  ...         40.771263                4
+self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7f0889779060>
 
-[455 rows x 7 columns]
-fixture_cleaned_1k =      fare_amount           pickup_datetime  ...  dropoff_latitude  passenger_count
-0       8.900000 2009-01-15 09:22:3...           4
-446     8.500000 2014-12-27 16:47:42+00:00  ...         40.771263                4
+    def test_route_preprocess_and_train(self):
+    
+        # 1) SETUP
+        data_query_path = Path(LOCAL_DATA_PATH).joinpath("raw",f"query_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
+        data_query_exists = data_query_path.is_file()
+    
+        if data_query_exists:
+            # We start from a blank state. No cached files
+            shutil.copyfile(data_query_path, f'{data_query_path}_backup')
+            data_query_path.unlink()
+    
+        # 2) ACT
+        from taxifare.interface.main_local import preprocess_and_train
+    
+        # Check route runs correctly
+>       preprocess_and_train(min_date=MIN_DATE, max_date=MAX_DATE)
 
-[447 rows x 7 columns]
-
-    [94mdef[39;49;00m [92mtest_clean_data[39;49;00m(fixture_query_1k, fixture_cleaned_1k):[90m[39;49;00m
-        [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96mml_logic[39;49;00m[04m[96m.[39;49;00m[04m[96mdata[39;49;00m [94mimport[39;49;00m clean_data[90m[39;49;00m
-        df_cleaned = clean_data(fixture_query_1k)[90m[39;49;00m
->       [94massert[39;49;00m df_cleaned.shape == fixture_cleaned_1k.shape[90m[39;49;00m
-[1m[31mE       assert (455, 7) == (447, 7)[0m
-[1m[31mE         At index 0 diff: 455 != 447[0m
-[1m[31mE         Full diff:[0m
-[1m[31mE         - (447, 7)[0m
-[1m[31mE         ?   ^^[0m
-[1m[31mE         + (455, 7)[0m
-[1m[31mE         ?   ^^[0m
-
-[1m[31mtests/train_at_scale/test_clean.py[0m:6: AssertionError
------------------------------ Captured stdout call -----------------------------
-✅ data cleaned
-[31m[1m________________ TestMainLocal.test_route_preprocess_and_train _________________[0m
-
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7fdc985913f0>
-
-    [94mdef[39;49;00m [92mtest_route_preprocess_and_train[39;49;00m([96mself[39;49;00m):[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# 1) SETUP[39;49;00m[90m[39;49;00m
-        data_query_path = Path(LOCAL_DATA_PATH).joinpath([33m"[39;49;00m[33mraw[39;49;00m[33m"[39;49;00m,[33mf[39;49;00m[33m"[39;49;00m[33mquery_[39;49;00m[33m{[39;49;00mMIN_DATE[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mMAX_DATE[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mDATA_SIZE[33m}[39;49;00m[33m.csv[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-        data_query_exists = data_query_path.is_file()[90m[39;49;00m
-    [90m[39;49;00m
-        [94mif[39;49;00m data_query_exists:[90m[39;49;00m
-            [90m# We start from a blank state. No cached files[39;49;00m[90m[39;49;00m
-            shutil.copyfile(data_query_path, [33mf[39;49;00m[33m'[39;49;00m[33m{[39;49;00mdata_query_path[33m}[39;49;00m[33m_backup[39;49;00m[33m'[39;49;00m)[90m[39;49;00m
-            data_query_path.unlink()[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# 2) ACT[39;49;00m[90m[39;49;00m
-        [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96minterface[39;49;00m[04m[96m.[39;49;00m[04m[96mmain_local[39;49;00m [94mimport[39;49;00m preprocess_and_train[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# Check route runs correctly[39;49;00m[90m[39;49;00m
->       preprocess_and_train(min_date=MIN_DATE, max_date=MAX_DATE)[90m[39;49;00m
-
-[1m[31mtests/train_at_scale/test_main_local.py[0m:36: 
+tests/train_at_scale/test_main_local.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+taxifare/interface/main_local.py:105: in preprocess_and_train
+    model,history = train_model(model, X_train_processed,y_train,validation_data=(X_val_processed,y_val))
+taxifare/ml_logic/model.py:71: in train_model
+    history = model.fit(
+/home/aljoke/.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/keras/utils/traceback_utils.py:70: in error_handler
+    raise e.with_traceback(filtered_tb) from None
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-min_date = '2009-01-01', max_date = '2015-01-01'
+value = array([[0.2857142857142857, 0.0, 0.0, ..., 0.0, 0.0, 0.0],
+       [0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0],
+       [0.0, 0.... 0.0, 0.0, 0.0],
+       [0.0, 1.0, 0.0, ..., 0.0, 0.0, 0.0],
+       [0.0, 0.0, 0.0, ..., 0.0, 0.0, 0.0]], dtype=object)
+ctx = <tensorflow.python.eager.context.Context object at 0x7f086cffa620>
+dtype = None
 
-    [94mdef[39;49;00m [92mpreprocess_and_train[39;49;00m(min_date:[96mstr[39;49;00m = [33m'[39;49;00m[33m2009-01-01[39;49;00m[33m'[39;49;00m, max_date:[96mstr[39;49;00m = [33m'[39;49;00m[33m2015-01-01[39;49;00m[33m'[39;49;00m) -> [94mNone[39;49;00m:[90m[39;49;00m
-    [90m    [39;49;00m[33m"""[39;49;00m
-    [33m    - Query the raw dataset from Le Wagon's BigQuery dataset[39;49;00m
-    [33m    - Cache query result as a local CSV if it doesn't exist locally[39;49;00m
-    [33m    - Clean and preprocess data[39;49;00m
-    [33m    - Train a Keras model on it[39;49;00m
-    [33m    - Save the model[39;49;00m
-    [33m    - Compute & save a validation performance metric[39;49;00m
-    [33m    """[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [96mprint[39;49;00m(Fore.MAGENTA + [33m"[39;49;00m[33m\n[39;49;00m[33m ⭐️ Use case: preprocess_and_train[39;49;00m[33m"[39;49;00m + Style.RESET_ALL)[90m[39;49;00m
-    [90m[39;49;00m
-        min_date = parse(min_date).strftime([33m'[39;49;00m[33m%[39;49;00m[33mY-[39;49;00m[33m%[39;49;00m[33mm-[39;49;00m[33m%d[39;49;00m[33m'[39;49;00m) [90m# e.g '2009-01-01'[39;49;00m[90m[39;49;00m
-        max_date = parse(max_date).strftime([33m'[39;49;00m[33m%[39;49;00m[33mY-[39;49;00m[33m%[39;49;00m[33mm-[39;49;00m[33m%d[39;49;00m[33m'[39;49;00m) [90m# e.g '2009-01-01'[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        query = [33mf[39;49;00m[33m"""[39;49;00m[33m[39;49;00m
-    [33m        SELECT [39;49;00m[33m{[39;49;00m[33m"[39;49;00m[33m,[39;49;00m[33m"[39;49;00m.join(COLUMN_NAMES_RAW)[33m}[39;49;00m[33m[39;49;00m
-    [33m        FROM [39;49;00m[33m{[39;49;00mGCP_PROJECT_WAGON[33m}[39;49;00m[33m.[39;49;00m[33m{[39;49;00mBQ_DATASET[33m}[39;49;00m[33m.raw_[39;49;00m[33m{[39;49;00mDATA_SIZE[33m}[39;49;00m[33m[39;49;00m
-    [33m        WHERE pickup_datetime BETWEEN [39;49;00m[33m'[39;49;00m[33m{[39;49;00mmin_date[33m}[39;49;00m[33m'[39;49;00m[33m AND [39;49;00m[33m'[39;49;00m[33m{[39;49;00mmax_date[33m}[39;49;00m[33m'[39;49;00m[33m[39;49;00m
-    [33m        ORDER BY pickup_datetime[39;49;00m[33m[39;49;00m
-    [33m        [39;49;00m[33m"""[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# Retrieve `query` data from BigQuery or from `data_query_cache_path` if the file already exists![39;49;00m[90m[39;49;00m
-        data_query_cache_path = Path(LOCAL_DATA_PATH).joinpath([33m"[39;49;00m[33mraw[39;49;00m[33m"[39;49;00m, [33mf[39;49;00m[33m"[39;49;00m[33mquery_[39;49;00m[33m{[39;49;00mmin_date[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mmax_date[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mDATA_SIZE[33m}[39;49;00m[33m.csv[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-        data_query_cached_exists = data_query_cache_path.is_file()[90m[39;49;00m
-    [90m[39;49;00m
-        [94mif[39;49;00m data_query_cached_exists:[90m[39;49;00m
-            [96mprint[39;49;00m([33m"[39;49;00m[33mLoading data from local CSV...[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-    [90m[39;49;00m
-            [90m# YOUR CODE HERE[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [94melse[39;49;00m:[90m[39;49;00m
-            [96mprint[39;49;00m([33m"[39;49;00m[33mLoading data from Querying Big Query server...[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-    [90m[39;49;00m
-            [90m# YOUR CODE HERE[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-            [90m# Save it locally to accelerate the next queries![39;49;00m[90m[39;49;00m
->           data.to_csv(data_query_cache_path, header=[94mTrue[39;49;00m, index=[94mFalse[39;49;00m)[90m[39;49;00m
-[1m[31mE           NameError: name 'data' is not defined[0m
+    def convert_to_eager_tensor(value, ctx, dtype=None):
+      """Converts the given `value` to an `EagerTensor`.
+    
+      Note that this function could return cached copies of created constants for
+      performance reasons.
+    
+      Args:
+        value: value to convert to EagerTensor.
+        ctx: value of context.context().
+        dtype: optional desired dtype of the converted EagerTensor.
+    
+      Returns:
+        EagerTensor created from value.
+    
+      Raises:
+        TypeError: if `dtype` is not compatible with the type of t.
+      """
+      if isinstance(value, ops.EagerTensor):
+        if dtype is not None and value.dtype != dtype:
+          raise TypeError(f"Expected tensor {value} with dtype {dtype!r}, but got "
+                          f"dtype {value.dtype!r}.")
+        return value
+      if dtype is not None:
+        try:
+          dtype = dtype.as_datatype_enum
+        except AttributeError:
+          dtype = dtypes.as_dtype(dtype).as_datatype_enum
+      ctx.ensure_initialized()
+>     return ops.EagerTensor(value, ctx.device_name, dtype)
+E     ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type float).
 
-[1m[31mtaxifare/interface/main_local.py[0m:52: NameError
+/home/aljoke/.pyenv/versions/3.10.6/envs/taxifare-env/lib/python3.10/site-packages/tensorflow/python/framework/constant_op.py:102: ValueError
 ----------------------------- Captured stdout call -----------------------------
 [34m
 Loading TensorFlow...[0m
@@ -118,58 +94,47 @@ Loading TensorFlow...[0m
 [35m
  ⭐️ Use case: preprocess_and_train[0m
 Loading data from Querying Big Query server...
------------------------------ Captured stderr call -----------------------------
-2023-10-18 23:03:47.904779: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2023-10-18 23:03:48.331593: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2023-10-18 23:03:48.331632: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2023-10-18 23:03:48.410957: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2023-10-18 23:03:49.872960: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
-2023-10-18 23:03:49.873187: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
-2023-10-18 23:03:49.873209: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
-[31m[1m________________________ TestMainLocal.test_route_pred _________________________[0m
-
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7fdc985914b0>
-
-    [94mdef[39;49;00m [92mtest_route_pred[39;49;00m([96mself[39;49;00m):[90m[39;49;00m
-        [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96minterface[39;49;00m[04m[96m.[39;49;00m[04m[96mmain_local[39;49;00m [94mimport[39;49;00m pred[90m[39;49;00m
-    [90m[39;49;00m
->       y_pred = pred()[90m[39;49;00m
-
-[1m[31mtests/train_at_scale/test_main_local.py[0m:60: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-[1m[31mtaxifare/interface/main_local.py[0m:105: in pred
-    X_processed = preprocess_features(X_pred)[90m[39;49;00m
-[1m[31mtaxifare/ml_logic/preprocessor.py[0m:27: in preprocess_features
-    preprocessor = create_sklearn_preprocessor()[90m[39;49;00m
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-    [94mdef[39;49;00m [92mcreate_sklearn_preprocessor[39;49;00m() -> ColumnTransformer:[90m[39;49;00m
-    [90m    [39;49;00m[33m"""[39;49;00m
-    [33m    Scikit-learn pipeline that transforms a cleaned dataset of shape (_, 7)[39;49;00m
-    [33m    into a preprocessed one of fixed shape (_, 65).[39;49;00m
-    [33m[39;49;00m
-    [33m    Stateless operation: "fit_transform()" equals "transform()".[39;49;00m
-    [33m    """[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [94mpass[39;49;00m  [90m# YOUR CODE HERE[39;49;00m[90m[39;49;00m
->       [94mreturn[39;49;00m final_preprocessor[90m[39;49;00m
-[1m[31mE       NameError: name 'final_preprocessor' is not defined[0m
-
-[1m[31mtaxifare/ml_logic/preprocessor.py[0m:23: NameError
------------------------------ Captured stdout call -----------------------------
-[35m
- ⭐️ Use case: pred[0m
-[34m
-Load latest model from local registry...[0m
+old dataframe size:  0.02 MB
+optimized size by 47.0 %
+new DataFrame size:  0.01  MB
+✅ data cleaned
 [34m
 Preprocessing features...[0m
-[31m[1m_____________________ TestMainLocal.test_route_preprocess ______________________[0m
+✅ X_processed, with shape (439, 65)
+[34m
+Preprocessing features...[0m
+✅ X_processed, with shape (8, 65)
+✅ model initialized
+✅ Model compiled
+----------------------------- Captured stderr call -----------------------------
+2023-10-19 01:22:54.561382: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2023-10-19 01:22:54.667114: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-10-19 01:22:54.667141: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2023-10-19 01:22:54.692579: E tensorflow/stream_executor/cuda/cuda_blas.cc:2981] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2023-10-19 01:22:55.304273: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer.so.7'; dlerror: libnvinfer.so.7: cannot open shared object file: No such file or directory
+2023-10-19 01:22:55.304348: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libnvinfer_plugin.so.7'; dlerror: libnvinfer_plugin.so.7: cannot open shared object file: No such file or directory
+2023-10-19 01:22:55.304358: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Cannot dlopen some TensorRT libraries. If you would like to use Nvidia GPU with TensorRT, please make sure the missing libraries mentioned above are installed properly.
+2023-10-19 01:22:59.201348: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:966] could not open file to read NUMA node: /sys/bus/pci/devices/0000:01:00.0/numa_node
+Your kernel may have been built without NUMA support.
+2023-10-19 01:22:59.201454: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201507: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcublas.so.11'; dlerror: libcublas.so.11: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201561: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcublasLt.so.11'; dlerror: libcublasLt.so.11: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201611: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcufft.so.10'; dlerror: libcufft.so.10: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201659: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcurand.so.10'; dlerror: libcurand.so.10: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201705: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcusolver.so.11'; dlerror: libcusolver.so.11: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201755: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcusparse.so.11'; dlerror: libcusparse.so.11: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201802: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudnn.so.8'; dlerror: libcudnn.so.8: cannot open shared object file: No such file or directory
+2023-10-19 01:22:59.201817: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1934] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+2023-10-19 01:22:59.202174: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+_____________________ TestMainLocal.test_route_preprocess ______________________
 
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7fdc98591690>
+self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7f0889779300>
 fixture_query_1k =      fare_amount           pickup_datetime  ...  dropoff_latitude  passenger_count
-0            8.9 2009-01-15 09:22:3...           4
-454          8.5 2014-12-27 16:47:42+00:00  ...         40.771263                4
+0       8.900000 2009-01-15 09:22:3...           4
+454     8.500000 2014-12-27 16:47:42+00:00  ...         40.771263                4
 
 [455 rows x 7 columns]
 fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   62   63   64         65
@@ -178,118 +143,38 @@ fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   6
 
 [447 rows x 66 columns]
 
-    [94mdef[39;49;00m [92mtest_route_preprocess[39;49;00m([96mself[39;49;00m, fixture_query_1k: pd.DataFrame, fixture_processed_1k: pd.DataFrame):[90m[39;49;00m
->       [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96minterface[39;49;00m[04m[96m.[39;49;00m[04m[96mmain_local[39;49;00m [94mimport[39;49;00m preprocess[90m[39;49;00m
-[1m[31mE       ImportError: cannot import name 'preprocess' from 'taxifare.interface.main_local' (/home/aljoke/code/lewagon/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)[0m
+    def test_route_preprocess(self, fixture_query_1k: pd.DataFrame, fixture_processed_1k: pd.DataFrame):
+>       from taxifare.interface.main_local import preprocess
+E       ImportError: cannot import name 'preprocess' from 'taxifare.interface.main_local' (/home/aljoke/code/lewagon/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)
 
-[1m[31mtests/train_at_scale/test_main_local.py[0m:67: ImportError
-[31m[1m________________________ TestMainLocal.test_route_train ________________________[0m
+tests/train_at_scale/test_main_local.py:67: ImportError
+________________________ TestMainLocal.test_route_train ________________________
 
-self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7fdc985915d0>
+self = <tests.train_at_scale.test_main_local.TestMainLocal object at 0x7f0889779240>
 
-    [94mdef[39;49;00m [92mtest_route_train[39;49;00m([96mself[39;49;00m):[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# SETUP[39;49;00m[90m[39;49;00m
-        data_processed_path = Path(LOCAL_DATA_PATH).joinpath([33m"[39;49;00m[33mprocessed[39;49;00m[33m"[39;49;00m,[33mf[39;49;00m[33m"[39;49;00m[33mprocessed_[39;49;00m[33m{[39;49;00mMIN_DATE[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mMAX_DATE[33m}[39;49;00m[33m_[39;49;00m[33m{[39;49;00mDATA_SIZE[33m}[39;49;00m[33m.csv[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-        data_processed_exists = data_processed_path.is_file()[90m[39;49;00m
-        [94mif[39;49;00m data_processed_exists:[90m[39;49;00m
-            shutil.copyfile(data_processed_path, [33mf[39;49;00m[33m'[39;49;00m[33m{[39;49;00mdata_processed_path[33m}[39;49;00m[33m_backup[39;49;00m[33m'[39;49;00m)[90m[39;49;00m
-            data_processed_path.unlink()[90m[39;49;00m
-    [90m[39;49;00m
-        data_processed_fixture_path = [33m"[39;49;00m[33mhttps://storage.googleapis.com/datascience-mlops/taxi-fare-ny/solutions/data_processed_fixture_2009-01-01_2015-01-01_1k.csv[39;49;00m[33m"[39;49;00m[90m[39;49;00m
-        os.system([33mf[39;49;00m[33m"[39;49;00m[33mcurl [39;49;00m[33m{[39;49;00mdata_processed_fixture_path[33m}[39;49;00m[33m > [39;49;00m[33m{[39;49;00mdata_processed_path[33m}[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# ACT[39;49;00m[90m[39;49;00m
->       [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96minterface[39;49;00m[04m[96m.[39;49;00m[04m[96mmain_local[39;49;00m [94mimport[39;49;00m train[90m[39;49;00m
-[1m[31mE       ImportError: cannot import name 'train' from 'taxifare.interface.main_local' (/home/aljoke/code/lewagon/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)[0m
+    def test_route_train(self):
+    
+        # SETUP
+        data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed",f"processed_{MIN_DATE}_{MAX_DATE}_{DATA_SIZE}.csv")
+        data_processed_exists = data_processed_path.is_file()
+        if data_processed_exists:
+            shutil.copyfile(data_processed_path, f'{data_processed_path}_backup')
+            data_processed_path.unlink()
+    
+        data_processed_fixture_path = "https://storage.googleapis.com/datascience-mlops/taxi-fare-ny/solutions/data_processed_fixture_2009-01-01_2015-01-01_1k.csv"
+        os.system(f"curl {data_processed_fixture_path} > {data_processed_path}")
+    
+        # ACT
+>       from taxifare.interface.main_local import train
+E       ImportError: cannot import name 'train' from 'taxifare.interface.main_local' (/home/aljoke/code/lewagon/07-ML-Ops/01-Train-at-scale/data-train-at-scale/taxifare/interface/main_local.py)
 
-[1m[31mtests/train_at_scale/test_main_local.py[0m:126: ImportError
+tests/train_at_scale/test_main_local.py:126: ImportError
 ----------------------------- Captured stderr call -----------------------------
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  153k  100  153k    0     0   485k      0 --:--:-- --:--:-- --:--:--  485k
-[31m[1m______________________________ test_model_can_fit ______________________________[0m
-
-fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   62   63   64         65
-0    0.000000  0.0  0.0  0.0  1.0  0.0...0.0   6.500000
-446  0.428571  0.0  0.0  0.0  0.0  0.0  ...  0.0  0.0  0.0  0.0  0.0   8.500000
-
-[447 rows x 66 columns]
-
-    [94mdef[39;49;00m [92mtest_model_can_fit[39;49;00m(fixture_processed_1k):[90m[39;49;00m
-    [90m[39;49;00m
-        [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96mml_logic[39;49;00m[04m[96m.[39;49;00m[04m[96mmodel[39;49;00m [94mimport[39;49;00m initialize_model,compile_model, train_model[90m[39;49;00m
-        fixture_X_processed = fixture_processed_1k.to_numpy()[:,:-[94m1[39;49;00m][90m[39;49;00m
-        fixture_y = fixture_processed_1k.to_numpy()[:,-[94m1[39;49;00m][90m[39;49;00m
->       model = initialize_model(fixture_X_processed.shape[[94m1[39;49;00m:])[90m[39;49;00m
-
-[1m[31mtests/train_at_scale/test_model.py[0m:10: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-input_shape = (65,)
-
-    [94mdef[39;49;00m [92minitialize_model[39;49;00m(input_shape: [96mtuple[39;49;00m) -> Model:[90m[39;49;00m
-    [90m    [39;49;00m[33m"""[39;49;00m
-    [33m    Initialize the Neural Network with random weights[39;49;00m
-    [33m    """[39;49;00m[90m[39;49;00m
-        [90m# YOUR CODE HERE[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [96mprint[39;49;00m([33m"[39;49;00m[33m✅ Model initialized[39;49;00m[33m"[39;49;00m)[90m[39;49;00m
-    [90m[39;49;00m
->       [94mreturn[39;49;00m model[90m[39;49;00m
-[1m[31mE       NameError: name 'model' is not defined[0m
-
-[1m[31mtaxifare/ml_logic/model.py[0m:28: NameError
------------------------------ Captured stdout call -----------------------------
-✅ Model initialized
-[31m[1m___________________________ test_preprocess_features ___________________________[0m
-
-fixture_cleaned_1k =      fare_amount           pickup_datetime  ...  dropoff_latitude  passenger_count
-0       8.900000 2009-01-15 09:22:3...           4
-446     8.500000 2014-12-27 16:47:42+00:00  ...         40.771263                4
-
-[447 rows x 7 columns]
-fixture_processed_1k =            0    1    2    3    4    5   ...   60   61   62   63   64         65
-0    0.000000  0.0  0.0  0.0  1.0  0.0...0.0   6.500000
-446  0.428571  0.0  0.0  0.0  0.0  0.0  ...  0.0  0.0  0.0  0.0  0.0   8.500000
-
-[447 rows x 66 columns]
-
-    [94mdef[39;49;00m [92mtest_preprocess_features[39;49;00m(fixture_cleaned_1k, fixture_processed_1k):[90m[39;49;00m
-        [94mfrom[39;49;00m [04m[96mtaxifare[39;49;00m[04m[96m.[39;49;00m[04m[96mml_logic[39;49;00m[04m[96m.[39;49;00m[04m[96mpreprocessor[39;49;00m [94mimport[39;49;00m preprocess_features[90m[39;49;00m
-        fixture_X_cleaned = fixture_cleaned_1k.drop(columns=[[33m'[39;49;00m[33mfare_amount[39;49;00m[33m'[39;49;00m])[90m[39;49;00m
-        fixture_X_processed = fixture_processed_1k.to_numpy()[:,:-[94m1[39;49;00m][90m[39;49;00m
-    [90m[39;49;00m
->       X_processed = preprocess_features(fixture_X_cleaned)[90m[39;49;00m
-
-[1m[31mtests/train_at_scale/test_processor_pipeline.py[0m:8: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-[1m[31mtaxifare/ml_logic/preprocessor.py[0m:27: in preprocess_features
-    preprocessor = create_sklearn_preprocessor()[90m[39;49;00m
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-    [94mdef[39;49;00m [92mcreate_sklearn_preprocessor[39;49;00m() -> ColumnTransformer:[90m[39;49;00m
-    [90m    [39;49;00m[33m"""[39;49;00m
-    [33m    Scikit-learn pipeline that transforms a cleaned dataset of shape (_, 7)[39;49;00m
-    [33m    into a preprocessed one of fixed shape (_, 65).[39;49;00m
-    [33m[39;49;00m
-    [33m    Stateless operation: "fit_transform()" equals "transform()".[39;49;00m
-    [33m    """[39;49;00m[90m[39;49;00m
-    [90m[39;49;00m
-        [94mpass[39;49;00m  [90m# YOUR CODE HERE[39;49;00m[90m[39;49;00m
->       [94mreturn[39;49;00m final_preprocessor[90m[39;49;00m
-[1m[31mE       NameError: name 'final_preprocessor' is not defined[0m
-
-[1m[31mtaxifare/ml_logic/preprocessor.py[0m:23: NameError
------------------------------ Captured stdout call -----------------------------
-[34m
-Preprocessing features...[0m
-[36m[1m=========================== short test summary info ============================[0m
-[31mFAILED[0m tests/train_at_scale/test_clean.py::[1mtest_clean_data[0m - assert (455, 7) == (447, 7)
-[31mFAILED[0m tests/train_at_scale/test_main_local.py::[1mTestMainLocal::test_route_preprocess_and_train[0m - NameError: name 'data' is not defined
-[31mFAILED[0m tests/train_at_scale/test_main_local.py::[1mTestMainLocal::test_route_pred[0m - NameError: name 'final_preprocessor' is not defined
-[31mFAILED[0m tests/train_at_scale/test_main_local.py::[1mTestMainLocal::test_route_preprocess[0m - ImportError: cannot import name 'preprocess' from 'taxifare.interface.main_...
-[31mFAILED[0m tests/train_at_scale/test_main_local.py::[1mTestMainLocal::test_route_train[0m - ImportError: cannot import name 'train' from 'taxifare.interface.main_local...
-[31mFAILED[0m tests/train_at_scale/test_model.py::[1mtest_model_can_fit[0m - NameError: name 'model' is not defined
-[31mFAILED[0m tests/train_at_scale/test_processor_pipeline.py::[1mtest_preprocess_features[0m - NameError: name 'final_preprocessor' is not defined
-[31m========================= [31m[1m7 failed[0m, [32m1 passed[0m[31m in 7.93s[0m[31m ==========================[0m
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  153k  100  153k    0     0   917k      0 --:--:-- --:--:-- --:--:--  921k
+=========================== short test summary info ============================
+FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess_and_train
+FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_preprocess
+FAILED tests/train_at_scale/test_main_local.py::TestMainLocal::test_route_train
+=================== 3 failed, 5 passed, 9 warnings in 8.37s ====================
