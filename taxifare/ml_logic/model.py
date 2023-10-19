@@ -62,7 +62,7 @@ def train_model(
     Fit the model and return a tuple (fitted_model, history)
     """
     es = EarlyStopping(
-    monitor="val_mae",
+    monitor="val_loss",
     patience=patience,
     restore_best_weights=True,
     verbose=0
@@ -71,6 +71,7 @@ def train_model(
     history = model.fit(
         X,
         y,
+        validation_data=validation_data,
         validation_split=validation_split,
         epochs=100,
         batch_size=batch_size,
