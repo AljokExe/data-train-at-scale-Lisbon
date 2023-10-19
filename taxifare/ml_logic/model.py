@@ -72,7 +72,7 @@ def train_model(
         X,
         y,
         validation_split=validation_split,
-        epochs=100,
+        epochs=100
         batch_size=batch_size,
         callbacks=[es],
         verbose=1
