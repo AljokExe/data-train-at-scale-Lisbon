@@ -411,7 +411,7 @@ if __name__ == '__main__':
         import sys
         import traceback
 
-        import ipdb
+        import ipd
         extype, value, tb = sys.exc_info()
         traceback.print_exc()
         ipdb.post_mortem(tb)
