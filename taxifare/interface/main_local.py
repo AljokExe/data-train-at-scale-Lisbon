@@ -230,11 +230,182 @@ def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> No
     print(f"✅ data query saved as {data_query_cache_path}")
     print("✅ preprocess() done")
 
+    """
+    Incremental train on the (already preprocessed) dataset locally stored.
+    - Loading data chunk-by-chunk
+    - Updating the weight of the model for each chunk
+    - Saving validation metrics at each chunks, and final model weights on local disk
+    """
+
+    print(Fore.MAGENTA + "\n ⭐️ Use case:train by batch" + Style.RESET_ALL)
+    from taxifare.ml_logic.registry import save_model, save_results
+    from taxifare.ml_logic.model import (compile_model, initialize_model, train_model)
+
+    data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
+    model = None
+    metrics_val_list = []  # store each val_mae of each chunk
+
+    # Iterate in chunks and partial fit on each chunk
+    chunks = pd.read_csv(data_processed_path,
+                         chunksize=CHUNK_SIZE,
+                         header=None,
+                         dtype=DTYPES_PROCESSED)
+
+    for chunk_id, chunk in enumerate(chunks):
+        print(f"training on preprocessed chunk n°{chunk_id}")
+        # You can adjust training params for each chunk if you want!
+        learning_rate = 0.0005
+        batch_size = 256
+        patience=2
+        split_ratio = 0.1 # Higher train/val split ratio when chunks are small! Feel free to adjust.
+
+        # Create (X_train_chunk, y_train_chunk, X_val_chunk, y_val_chunk)
+        train_length = int(len(chunk)*(1-split_ratio))
+        chunk_train = chunk.iloc[:train_length, :].sample(frac=1).to_numpy()
+        chunk_val = chunk.iloc[train_length:, :].sample(frac=1).to_numpy()
+
+        X_train_chunk = chunk_train[:, :-1]
+        y_train_chunk = chunk_train[:, -1]
+        X_val_chunk = chunk_val[:, :-1]
+        y_val_chunk = chunk_val[:, -1]
+
+        # Train a model *incrementally*, and store the val MAE of each chunk in `metrics_val_list`
+        # YOUR CODE HERE
+
+    # Return the last value of the validation MAE
+    val_mae = metrics_val_list[-1]
+
+    # Save model and training params
+    params = dict(
+        learning_rate=learning_rate,
+        batch_size=batch_size,
+        patience=patience,
+        incremental=True,
+        chunk_size=CHUNK_SIZE
+    )
+
+    print(f"✅ Trained with MAE: {round(val_mae, 2)}")
+
+     # Save results & model
+    save_results(params=params, metrics=dict(mae=val_mae))
+    save_model(model=model)
+
+    print("✅ train() done")
+
+def train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
+    """
+    Incremental training on the (already preprocessed) dataset, stored locally
+
+    - Loading data in chunks
+    - Updating the weight of the model for each chunk
+    - Saving validation metrics at each chunk, and final model weights on the local disk
+    """
+
+    print(Fore.MAGENTA + "\n ⭐️ Use case: train in batches" + Style.RESET_ALL)
+
+    data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
+    model = None
+    metrics_val_list = []  # store the val_mae of each chunk
+
+    # Iterate in chunks and partially fit on each chunk
+    chunks = pd.read_csv(
+        data_processed_path,
+        chunksize=CHUNK_SIZE,
+        header=None,
+        dtype=DTYPES_PROCESSED
+    )
+
+    for chunk_id, chunk in enumerate(chunks):
+        print(f"Training on preprocessed chunk n°{chunk_id}")
+
+        # You can adjust training params for each chunk if you want!
+        learning_rate = 0.0005
+        batch_size = 256
+        patience=2
+        split_ratio = 0.1 # Higher train/val split ratio when chunks are small! Feel free to adjust.
+
+        # Create (X_train_chunk, y_train_chunk, X_val_chunk, y_val_chunk)
+        train_length = int(len(chunk)*(1-split_ratio))
+        chunk_train = chunk.iloc[:train_length, :].sample(frac=1).to_numpy()
+        chunk_val = chunk.iloc[train_length:, :].sample(frac=1).to_numpy()
+
+        X_train_chunk = chunk_train[:, :-1]
+        y_train_chunk = chunk_train[:, -1]
+        X_val_chunk = chunk_val[:, :-1]
+        y_val_chunk = chunk_val[:, -1]
+
+        # Train a model *incrementally*, and store the val_mae of each chunk in `metrics_val_list`
+        # $CODE_BEGIN
+        if model is None:
+            model = initialize_model(input_shape=X_train_chunk.shape[1:])
+
+        model = compile_model(model, learning_rate)
+
+        model, history = train_model(
+            model,
+            X_train_chunk,
+            y_train_chunk,
+            batch_size=batch_size,
+            patience=patience,
+            validation_data=(X_val_chunk, y_val_chunk)
+        )
+
+        metrics_val_chunk = np.min(history.history['val_mae'])
+        metrics_val_list.append(metrics_val_chunk)
+
+        print(metrics_val_chunk)
+        # $CODE_END
+
+    # Return the last value of the validation MAE
+    val_mae = metrics_val_list[-1]
+
+    # Save model and training params
+    params = dict(
+        learning_rate=learning_rate,
+        batch_size=batch_size,
+        patience=patience,
+        incremental=True,
+        chunk_size=CHUNK_SIZE
+    )
+
+    print(f"✅ Trained with MAE: {round(val_mae, 2)}")
+
+    # Save results & model
+    save_results(params=params, metrics=dict(mae=val_mae))
+    save_model(model=model)
+
+    print("✅ train() done")
+# $ERASE_END
+
+def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
+
+    print(Fore.MAGENTA + "\n ⭐️ Use case: pred" + Style.RESET_ALL)
+
+    from taxifare.ml_logic.registry import load_model
+    from taxifare.ml_logic.preprocessor import preprocess_features
+
+    if X_pred is None:
+       X_pred = pd.DataFrame(dict(
+           pickup_datetime=[pd.Timestamp("2013-07-06 17:18:00", tz='UTC')],
+           pickup_longitude=[-73.950655],
+           pickup_latitude=[40.783282],
+           dropoff_longitude=[-73.984365],
+           dropoff_latitude=[40.769802],
+           passenger_count=[1],
+       ))
+
+    model = load_model()
+    X_processed = preprocess_features(X_pred)
+    y_pred = model.predict(X_processed)
+
+    print(f"✅ pred() done")
+    return y_pred
+
 if __name__ == '__main__':
     try:
-        preprocess_and_train()
-        # preprocess()
-        # train()
+        #preprocess_and_train()
+        preprocess()
+        train()
         pred()
     except:
         import sys
