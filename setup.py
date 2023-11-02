@@ -18,4 +18,3 @@ setup(name='taxifare',
       # include_package_data: to install data from MANIFEST.in
       include_package_data=True,
       zip_safe=False)
-#promise I finishe
