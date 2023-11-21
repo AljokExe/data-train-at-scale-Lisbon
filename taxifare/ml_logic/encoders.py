@@ -2,10 +2,16 @@ import math
 import numpy as np
 import pandas as pd
 import pygeohash as gh
+
+# $ERASE_BEGIN
 from taxifare.utils import simple_time_and_memory_tracker
+# $ERASE_END
 
 def transform_time_features(X: pd.DataFrame) -> np.ndarray:
-    timedelta = (X["pickup_datetime"] - pd.Timestamp('2009-01-01T00:00:00', tz='UTC'))/pd.Timedelta(1,'D')
+    # $CHA_BEGIN
+    assert isinstance(X, pd.DataFrame)
+
+    timedelta = (X["pickup_datetime"] - pd.Timestamp('2009-01-01T00:00:00', tz='UTC')) / pd.Timedelta(1,'D')
 
     pickup_dt = X["pickup_datetime"].dt.tz_convert("America/New_York").dt
     dow = pickup_dt.weekday
@@ -16,16 +22,20 @@ def transform_time_features(X: pd.DataFrame) -> np.ndarray:
     hour_cos = np.cos(2*math.pi / 24 * hour)
 
     return np.stack([hour_sin, hour_cos, dow, month, timedelta], axis=1)
+    # $CHA_END
 
 
 def transform_lonlat_features(X: pd.DataFrame) -> pd.DataFrame:
+    # $CHA_BEGIN
+    assert isinstance(X, pd.DataFrame)
     lonlat_features = ["pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude"]
 
     def distances_vectorized(df: pd.DataFrame, start_lat: str, start_lon: str, end_lat: str, end_lon: str) -> dict:
         """
-        Calculate the haversine and Manhattan distances between two points on the earth (specified in decimal degrees).
+        Calculate the haversine and Manhattan distances between two 
+        points on the earth (specified in decimal degrees)
         Vectorized version for pandas df
-        Computes distance in Km
+        Computes distance in km
         """
         earth_radius = 6371
 
@@ -44,24 +54,33 @@ def transform_lonlat_features(X: pd.DataFrame) -> pd.DataFrame:
 
         return dict(
             haversine=haversine_km,
-            manhattan=manhattan_km)
+            manhattan=manhattan_km
+        )
 
     result = pd.DataFrame(distances_vectorized(X, *lonlat_features))
 
     return result
+    # $CHA_END
 
 def compute_geohash(X: pd.DataFrame, precision: int = 5) -> np.ndarray:
     """
     Add a geohash (ex: "dr5rx") of len "precision" = 5 by default
     corresponding to each (lon, lat) tuple, for pick-up, and drop-off
     """
-    X["geohash_pickup"] = X.apply(
-        lambda x: gh.encode(x.pickup_latitude, x.pickup_longitude, precision=precision),
-        axis=1
-    )
-    X["geohash_dropoff"] = X.apply(
-        lambda x: gh.encode(x.dropoff_latitude, x.dropoff_longitude, precision=precision),
-        axis=1
-    )
+    # $CHA_BEGIN
+    assert isinstance(X, pd.DataFrame)
+
+    X["geohash_pickup"] = X.apply(lambda x: gh.encode(
+        x.pickup_latitude, 
+        x.pickup_longitude, 
+        precision=precision
+    ), axis=1)
+
+    X["geohash_dropoff"] = X.apply(lambda x: gh.encode(
+        x.dropoff_latitude, 
+        x.dropoff_longitude, 
+        precision=precision
+    ), axis=1)
 
     return X[["geohash_pickup", "geohash_dropoff"]]
+    # $CHA_END

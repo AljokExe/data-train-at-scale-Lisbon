@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 ##################  VARIABLES  ##################
-DATA_SIZE = 'all'
+DATA_SIZE = '1k'
 CHUNK_SIZE = 100000
 GCP_PROJECT = "wagon-bootcamp-401913" #
 GCP_PROJECT_WAGON = "wagon-public-datasets"

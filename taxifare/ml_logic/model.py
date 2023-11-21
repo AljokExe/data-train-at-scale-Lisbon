@@ -3,7 +3,6 @@ import time
 
 from colorama import Fore, Style
 from typing import Tuple
-from taxifare.utils import simple_time_and_memory_tracker
 
 # Timing the TF import
 print(Fore.BLUE + "\nLoading TensorFlow..." + Style.RESET_ALL)
@@ -17,12 +16,13 @@ end = time.perf_counter()
 print(f"\n✅ TensorFlow loaded ({round(end - start, 2)}s)")
 
 
-@simple_time_and_memory_tracker
+
 def initialize_model(input_shape: tuple) -> Model:
     """
     Initialize the Neural Network with random weights
     """
-    reg = regularizers.l1_l2(l1=0.005)
+    # $CODE_BEGIN
+    reg = regularizers.l1_l2(l2=0.005)
 
     model = Sequential()
     model.add(layers.Input(shape=input_shape))
@@ -33,40 +33,46 @@ def initialize_model(input_shape: tuple) -> Model:
     model.add(layers.BatchNormalization(momentum=0.9))  # use momentum=0 to only use statistic of the last seen minibatch in inference mode ("short memory"). Use 1 to average statistics of all seen batch during training histories.
     model.add(layers.Dropout(rate=0.1))
     model.add(layers.Dense(1, activation="linear"))
+    # $CODE_END
 
-    print("✅ model initialized")
+    print("✅ Model initialized")
 
     return model
 
-@simple_time_and_memory_tracker
+
 def compile_model(model: Model, learning_rate=0.0005) -> Model:
     """
     Compile the Neural Network
     """
-    optimizer = keras.optimizers.Adam(learning_rate=learning_rate)
+    # $CODE_BEGIN
+    optimizer = optimizers.Adam(learning_rate=learning_rate)
     model.compile(loss="mean_squared_error", optimizer=optimizer, metrics=["mae"])
+    # $CODE_END
 
     print("✅ Model compiled")
 
     return model
-@simple_time_and_memory_tracker
+
 def train_model(
         model: Model,
         X: np.ndarray,
         y: np.ndarray,
         batch_size=256,
-        patience=5,
+        patience=2,
         validation_data=None, # overrides validation_split
         validation_split=0.3
     ) -> Tuple[Model, dict]:
     """
     Fit the model and return a tuple (fitted_model, history)
     """
+    # $CODE_BEGIN
+    print(Fore.BLUE + "\nTraining model..." + Style.RESET_ALL)
+
     es = EarlyStopping(
-    monitor="val_loss",
-    patience=patience,
-    restore_best_weights=True,
-    verbose=0
+        monitor="val_loss",
+        patience=patience,
+        restore_best_weights=True,
+        verbose=1
     )
 
     history = model.fit(
@@ -77,8 +83,11 @@ def train_model(
         epochs=100,
         batch_size=batch_size,
         callbacks=[es],
-        verbose=1
+        verbose=0
     )
+    # $CODE_END
+
     print(f"✅ Model trained on {len(X)} rows with min val MAE: {round(np.min(history.history['val_mae']), 2)}")
 
     return model, history
+

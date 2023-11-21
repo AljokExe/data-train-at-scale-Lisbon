@@ -12,18 +12,6 @@ from taxifare.ml_logic.preprocessor import preprocess_features
 from taxifare.ml_logic.registry import save_model, save_results, load_model
 from taxifare.ml_logic.model import compile_model, initialize_model, train_model
 
-DTYPES_RAW = {
-    "key": "datetime64[ns, UTC]",
-    "fare_amount": "float32",
-    "pickup_datetime": "datetime64[ns, UTC]",
-    "pickup_longitude": "float32",
-    "pickup_latitude": "float32",
-    "dropoff_longitude": "float32",
-    "dropoff_latitude": "float32",
-    "passenger_count": "int16"
-}
-
-
 def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
     """
     - Query the raw dataset from Le Wagon's BigQuery dataset
@@ -52,47 +40,52 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     if data_query_cached_exists:
         print("Loading data from local CSV...")
-        print("load local file...")
-        df = pd.read_csv(data_query_cache_path, parse_dates=['pickup_datetime'])
 
+        # $CODE_BEGIN
+        data = pd.read_csv(data_query_cache_path)
+        # $CODE_END
 
     else:
         print("Loading data from Querying Big Query server...")
 
-        from google.cloud import bigquery
-
+        # $CODE_BEGIN
         client = bigquery.Client(project=GCP_PROJECT)
         query_job = client.query(query)
         result = query_job.result()
-        df = result.to_dataframe()
+        data = result.to_dataframe()
+        # $CODE_END
+
         # Save it locally to accelerate the next queries!
-        df.to_csv(data_query_cache_path, header=True, index=False)
+        data.to_csv(data_query_cache_path, header=True, index=False)
 
     # Clean data using data.py
-    df=clean_data(df)
+    # $CODE_BEGIN
+    data = clean_data(data)
+    # $CODE_END
 
     # Create (X_train, y_train, X_val, y_val) without data leaks
     # No need for test sets, we'll report val metrics only
     split_ratio = 0.02 # About one month of validation data
 
-    val_length = int((len(df)) * split_ratio)
-    train_length = len(df) - val_length
+    # $CODE_BEGIN
+    train_length = int(len(data) * (1 - split_ratio))
 
-    df_train = df.iloc[:train_length, :].sample(frac=1) # Shuffle datasets to improve training
-    df_val = df.iloc[train_length: , :].sample(frac=1)
+    data_train = data.iloc[:train_length, :].sample(frac=1)
+    data_val = data.iloc[train_length:, :].sample(frac=1)
 
-    X_train = df_train.drop("fare_amount", axis=1)
-    y_train = df_train[["fare_amount"]]
+    X_train = data_train.drop("fare_amount", axis=1)
+    y_train = data_train[["fare_amount"]]
 
-    X_val = df_val.drop("fare_amount", axis=1)
-    y_val = df_val[["fare_amount"]]
+    X_val = data_val.drop("fare_amount", axis=1)
+    y_val = data_val[["fare_amount"]]
+    # $CODE_END
 
     # Create (X_train_processed, X_val_processed) using `preprocessor.py`
     # Luckily, our preprocessor is stateless: we can `fit_transform` both X_train and X_val without data leakage!
-
+    # $CODE_BEGIN
     X_train_processed = preprocess_features(X_train)
     X_val_processed = preprocess_features(X_val)
-
+    # $CODE_END
 
     # Train a model on the training set, using `model.py`
     model = None
@@ -100,11 +93,17 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
     batch_size = 256
     patience = 2
 
+    # $CODE_BEGIN
     model = initialize_model(input_shape=X_train_processed.shape[1:])
-    model = compile_model(model)
-    model,history = train_model(model, X_train_processed,y_train,validation_data=(X_val_processed,y_val))
+    model = compile_model(model, learning_rate=learning_rate)
 
-
+    model, history = train_model(
+        model, X_train_processed, y_train,
+        batch_size=batch_size,
+        patience=patience,
+        validation_data=(X_val_processed, y_val)
+    )
+    # $CODE_END
 
     # Compute the validation metric (min val_mae) of the holdout set
     val_mae = np.min(history.history['val_mae'])
@@ -121,44 +120,16 @@ def preprocess_and_train(min_date:str = '2009-01-01', max_date:str = '2015-01-01
 
     print("✅ preprocess_and_train() done")
 
-
-def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
-    print(Fore.MAGENTA + "\n ⭐️ Use case: pred" + Style.RESET_ALL)
-
-    if X_pred is None:
-        X_pred = pd.DataFrame(dict(
-            pickup_datetime=[pd.Timestamp("2013-07-06 17:18:00", tz='UTC')],
-            pickup_longitude=[-73.950655],
-            pickup_latitude=[40.783282],
-            dropoff_longitude=[-73.984365],
-            dropoff_latitude=[40.769802],
-            passenger_count=[1],
-        ))
-
-    model = load_model()
-    X_processed = preprocess_features(X_pred)
-    y_pred = model.predict(X_processed)
-
-    print(f"✅ pred() done")
-
-    return y_pred
-
+# $ERASE_BEGIN
 def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> None:
     """
-    Query and preprocess the raw dataset iteratively (by chunks).
-    Then store the newly processed (and raw) data on local hard-drive for later re-use.
+    1. Query and preprocess the raw dataset iteratively (in chunks)
+    2. Store the newly processed (and raw) data on your local hard drive for later use
 
-    - If raw data already exists on local disk:
-        - use `pd.read_csv(..., chunksize=CHUNK_SIZE)`
-
-    - If raw data does not yet exists:
-        - use `bigquery.Client().query().result().to_dataframe_iterable()`
-
+    - If raw data already exists on your local disk, use `pd.read_csv(..., chunksize=CHUNK_SIZE)`
+    - If raw data does NOT yet exist, use `bigquery.Client().query().result().to_dataframe_iterable()`
     """
     print(Fore.MAGENTA + "\n ⭐️ Use case: preprocess by batch" + Style.RESET_ALL)
-
-    from taxifare.ml_logic.data import clean_data
-    from taxifare.ml_logic.preprocessor import preprocess_features
 
     min_date = parse(min_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
     max_date = parse(max_date).strftime('%Y-%m-%d') # e.g '2009-01-01'
@@ -169,55 +140,68 @@ def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> No
         WHERE pickup_datetime BETWEEN '{min_date}' AND '{max_date}'
         ORDER BY pickup_datetime
         """
-    # Retrieve `query` data as dataframe iterable
+    # Retrieve `query` data as a DataFrame iterable
     data_query_cache_path = Path(LOCAL_DATA_PATH).joinpath("raw", f"query_{min_date}_{max_date}_{DATA_SIZE}.csv")
     data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
 
     data_query_cache_exists = data_query_cache_path.is_file()
     if data_query_cache_exists:
-        print("Get a dataframe iterable from local CSV...")
+        print("Get a DataFrame iterable from local CSV...")
         chunks = None
+
+        # $CODE_BEGIN
         chunks = pd.read_csv(
             data_query_cache_path,
             chunksize=CHUNK_SIZE,
             parse_dates=["pickup_datetime"]
         )
-
+        # $CODE_END
     else:
-        print("Get a dataframe iterable from Querying Big Query server...")
+        print("Get a DataFrame iterable from querying the BigQuery server...")
         chunks = None
-        # 🎯 Hints: `bigquery.Client(...).query(...).result(page_size=...).to_dataframe_iterable()`
+
+        # 🎯 HINT: `bigquery.Client(...).query(...).result(page_size=...).to_dataframe_iterable()`
+        # $CODE_BEGIN
         client = bigquery.Client(project=GCP_PROJECT)
 
         query_job = client.query(query)
         result = query_job.result(page_size=CHUNK_SIZE)
 
         chunks = result.to_dataframe_iterable()
+        # $CODE_END
 
     for chunk_id, chunk in enumerate(chunks):
-        print(f"processing chunk {chunk_id}...")
+        print(f"Processing chunk {chunk_id}...")
 
         # Clean chunk
+        # $CODE_BEGIN
         chunk_clean = clean_data(chunk)
+        # $CODE_END
 
         # Create chunk_processed
-        # 🎯 Hints: Create (`X_chunk`, `y_chunk`), process only `X_processed_chunk`, then concatenate (X_processed_chunk, y_chunk)
+        # 🎯 HINT: create (`X_chunk`, `y_chunk`), process only `X_processed_chunk`, then concatenate (X_processed_chunk, y_chunk)
+        # $CODE_BEGIN
         X_chunk = chunk_clean.drop("fare_amount", axis=1)
         y_chunk = chunk_clean[["fare_amount"]]
         X_processed_chunk = preprocess_features(X_chunk)
 
         chunk_processed = pd.DataFrame(np.concatenate((X_processed_chunk, y_chunk), axis=1))
+        # $CODE_END
+
         # Save and append the processed chunk to a local CSV at "data_processed_path"
-        # 🎯 Hints: df.to_csv(mode=...)
-        # 🎯 Hints: We want a CSV without index nor headers (they'd be meaningless)
+        # 🎯 HINT: df.to_csv(mode=...)
+        # 🎯 HINT: we want a CSV with neither index nor headers (they'd be meaningless)
+        # $CODE_BEGIN
         chunk_processed.to_csv(
             data_processed_path,
             mode="w" if chunk_id==0 else "a",
             header=False,
             index=False,
         )
+        # $CODE_END
 
-        # Save and append the raw chunk if not `data_query_cache_exists`
+        # Save and append the raw chunk `if not data_query_cache_exists`
+        # $CODE_BEGIN
         # 🎯 HINT: we want a CSV with headers this time
         # 🎯 HINT: only the first chunk should store headers
         if not data_query_cache_exists:
@@ -227,70 +211,11 @@ def preprocess(min_date: str = '2009-01-01', max_date: str = '2015-01-01') -> No
                 header=True if chunk_id==0 else False,
                 index=False
             )
+        # $CODE_END
+
     print(f"✅ data query saved as {data_query_cache_path}")
     print("✅ preprocess() done")
 
-    """
-    Incremental train on the (already preprocessed) dataset locally stored.
-    - Loading data chunk-by-chunk
-    - Updating the weight of the model for each chunk
-    - Saving validation metrics at each chunks, and final model weights on local disk
-    """
-
-    print(Fore.MAGENTA + "\n ⭐️ Use case:train by batch" + Style.RESET_ALL)
-    from taxifare.ml_logic.registry import save_model, save_results
-    from taxifare.ml_logic.model import (compile_model, initialize_model, train_model)
-
-    data_processed_path = Path(LOCAL_DATA_PATH).joinpath("processed", f"processed_{min_date}_{max_date}_{DATA_SIZE}.csv")
-    model = None
-    metrics_val_list = []  # store each val_mae of each chunk
-
-    # Iterate in chunks and partial fit on each chunk
-    chunks = pd.read_csv(data_processed_path,
-                         chunksize=CHUNK_SIZE,
-                         header=None,
-                         dtype=DTYPES_PROCESSED)
-
-    for chunk_id, chunk in enumerate(chunks):
-        print(f"training on preprocessed chunk n°{chunk_id}")
-        # You can adjust training params for each chunk if you want!
-        learning_rate = 0.0005
-        batch_size = 256
-        patience=2
-        split_ratio = 0.1 # Higher train/val split ratio when chunks are small! Feel free to adjust.
-
-        # Create (X_train_chunk, y_train_chunk, X_val_chunk, y_val_chunk)
-        train_length = int(len(chunk)*(1-split_ratio))
-        chunk_train = chunk.iloc[:train_length, :].sample(frac=1).to_numpy()
-        chunk_val = chunk.iloc[train_length:, :].sample(frac=1).to_numpy()
-
-        X_train_chunk = chunk_train[:, :-1]
-        y_train_chunk = chunk_train[:, -1]
-        X_val_chunk = chunk_val[:, :-1]
-        y_val_chunk = chunk_val[:, -1]
-
-        # Train a model *incrementally*, and store the val MAE of each chunk in `metrics_val_list`
-        # YOUR CODE HERE
-
-    # Return the last value of the validation MAE
-    val_mae = metrics_val_list[-1]
-
-    # Save model and training params
-    params = dict(
-        learning_rate=learning_rate,
-        batch_size=batch_size,
-        patience=patience,
-        incremental=True,
-        chunk_size=CHUNK_SIZE
-    )
-
-    print(f"✅ Trained with MAE: {round(val_mae, 2)}")
-
-     # Save results & model
-    save_results(params=params, metrics=dict(mae=val_mae))
-    save_model(model=model)
-
-    print("✅ train() done")
 
 def train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
     """
@@ -378,34 +303,32 @@ def train(min_date:str = '2009-01-01', max_date:str = '2015-01-01') -> None:
 # $ERASE_END
 
 def pred(X_pred: pd.DataFrame = None) -> np.ndarray:
-
     print(Fore.MAGENTA + "\n ⭐️ Use case: pred" + Style.RESET_ALL)
 
-    from taxifare.ml_logic.registry import load_model
-    from taxifare.ml_logic.preprocessor import preprocess_features
-
     if X_pred is None:
-       X_pred = pd.DataFrame(dict(
-           pickup_datetime=[pd.Timestamp("2013-07-06 17:18:00", tz='UTC')],
-           pickup_longitude=[-73.950655],
-           pickup_latitude=[40.783282],
-           dropoff_longitude=[-73.984365],
-           dropoff_latitude=[40.769802],
-           passenger_count=[1],
-       ))
+        X_pred = pd.DataFrame(dict(
+            pickup_datetime=[pd.Timestamp("2013-07-06 17:18:00", tz='UTC')],
+            pickup_longitude=[-73.950655],
+            pickup_latitude=[40.783282],
+            dropoff_longitude=[-73.984365],
+            dropoff_latitude=[40.769802],
+            passenger_count=[1],
+        ))
 
     model = load_model()
     X_processed = preprocess_features(X_pred)
     y_pred = model.predict(X_processed)
 
     print(f"✅ pred() done")
+
     return y_pred
+
 
 if __name__ == '__main__':
     try:
-        #preprocess_and_train()
-        preprocess()
-        train()
+        preprocess_and_train()
+        # preprocess()
+        # train()
         pred()
     except:
         import sys
